@@ -22,13 +22,7 @@ class pokemonDetailViewController: UIViewController{
     @IBOutlet weak var typeData2: UILabel?
     
     @IBOutlet weak var pokeId: UILabel!
-    public var id: Int = 0{
-        didSet{
-            
-            getDetail()
-        }
-    }
-    var resourceURL:URL = URL(fileURLWithPath: "")
+    public var id: Int = 0
     
     
     var pokedetail = [PokemonDetail](){
@@ -65,6 +59,17 @@ class pokemonDetailViewController: UIViewController{
     
     override func viewDidLoad() {
         super.viewDidLoad()
+    
+        let pokeDetail = pokemonDetailRequest(id: id)
+        pokeDetail.callDetailPokemon(completion: { [weak self] result in
+                        switch result{
+                        case .failure(let Error):
+                            print(Error)
+                        case .success(let pokemon):
+                            self?.pokedetail = pokemon
+                        }
+                    }
+        )
         
     }
     
@@ -120,66 +125,6 @@ extension pokemonDetailViewController{
         default:
             return UIColor(red: 168/255, green: 167/255, blue: 119/255, alpha: 1)
         }
-    }
-    
-    func getDetail(){
-        
-        let resourceString = "https://pokeapi.co/api/v2/pokemon/\(String(id))/"
-        guard let resourceURL = URL(string: resourceString) else {
-            fatalError()
-        }
-        self.resourceURL = resourceURL
-        callDetailPokemon{ [weak self] result in
-            switch result{
-            case .failure(let Error):
-                print(Error)
-            case .success(let pokemon):
-                self?.pokedetail = pokemon
-            }
-        }
-    }
-    
-    func callDetailPokemon(completion: @escaping(Result<[PokemonDetail],PokemonError>) -> Void ) {
-        let dataTask = URLSession.shared.dataTask(with: resourceURL){data, res, err in
-            if let err = err {
-                print(err.localizedDescription)
-                return
-            }
-            
-            guard let data = data,let res = res as? HTTPURLResponse else {
-                completion(.failure(.noData))
-                return
-            }
-            
-            do{
-                switch res.statusCode{
-                case 200:
-                    print(data)
-                    let decoder = JSONDecoder()
-                    let pokemonRes = try decoder.decode(PokemonDetail.self, from: data )
-                    let pokemon = pokemonRes
-                    completion(.success([pokemon]))
-                default:
-                    print(data)
-                    return
-                }
-                
-            } catch let DecodingError.dataCorrupted(context) {
-                print(context)
-            } catch let DecodingError.keyNotFound(key, context) {
-                print("Key '\(key)' not found:", context.debugDescription)
-                print("codingPath:", context.codingPath)
-            } catch let DecodingError.valueNotFound(value, context) {
-                print("Value '\(value)' not found:", context.debugDescription)
-                print("codingPath:", context.codingPath)
-            } catch let DecodingError.typeMismatch(type, context)  {
-                print("Type '\(type)' mismatch:", context.debugDescription)
-                print("codingPath:", context.codingPath)
-            } catch {
-                print("error: ", error)
-            }
-        }
-        dataTask.resume()
     }
     
 }

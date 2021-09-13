@@ -121,15 +121,7 @@ struct pokemonDetailRequest {
     
     let resourceURL: URL
     
-    init(id:Int) {
-        let resourceString = "https://pokeapi.co/api/v2/pokemon/\(String(id))/"
-        guard let resourceURL = URL(string: resourceString) else {
-            fatalError()
-        }
-        self.resourceURL = resourceURL
-    }
-    
-    func getPokemon(completion: @escaping(Result<[PokemonDetail],PokemonError>) -> Void ) {
+    func callDetailPokemon(completion: @escaping(Result<[PokemonDetail],PokemonError>) -> Void ) {
         let dataTask = URLSession.shared.dataTask(with: resourceURL){data, res, err in
             if let err = err {
                 print(err.localizedDescription)
@@ -144,11 +136,13 @@ struct pokemonDetailRequest {
             do{
                 switch res.statusCode{
                 case 200:
+                    print(data)
                     let decoder = JSONDecoder()
                     let pokemonRes = try decoder.decode(PokemonDetail.self, from: data )
                     let pokemon = pokemonRes
                     completion(.success([pokemon]))
                 default:
+                    print(data)
                     return
                 }
                 
@@ -168,6 +162,14 @@ struct pokemonDetailRequest {
             }
         }
         dataTask.resume()
+    }
+    
+    init(id:Int) {
+        let resourceString = "https://pokeapi.co/api/v2/pokemon/\(String(id))/"
+        guard let resourceURL = URL(string: resourceString) else {
+            fatalError()
+        }
+        self.resourceURL = resourceURL
     }
     
 }
